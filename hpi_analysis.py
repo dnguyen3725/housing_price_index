@@ -1,4 +1,6 @@
-import pdb
+from IPython.core.debugger import Tracer
+import numpy as np
+import pandas as pd
 import csv
 import Quandl
 
@@ -23,26 +25,40 @@ def main():
     test_set = ['The Villages, FL','Cedar Rapids, IA', 'Champaign-Urbana, IL']
     
     # Download HPI data
+    print '*****************'
     print 'Downloading Data'
-    hpi_data = {}
-    for city in test_set:
-    #for city in dataset_code:
+    hpi = pd.DataFrame()
+    
+    #for city in test_set:
+    for city in dataset_code:
         
+        # Download quandl data for city housing price index
         quandl_code = [database_code[city]+'/'+dataset_code[city]]
         
         print 'Downloading data for '+city
         
-        hpi_data[city] = Quandl.get(quandl_code,authtoken=auth['authtoken'])
+        # Get HPI data for each city
+        hpi_data = Quandl.get(quandl_code,authtoken=auth['authtoken'])
         
-        #current_index = hpi_data[city]['2015-12-31']
-        #previous_index = hpi_data[city]['{}-12-31'.format(2015-years_to_analyze)]
-        #appreciation[city] = current_index/previous_index
+        # Rename column to city name and merge into dataframe
+        hpi_data.columns = [city]        
+        hpi = pd.concat([hpi, hpi_data], axis=1)
         
     print 'Download Complete'
+    print '*****************'
     
-    pdb.set_trace()
+    # Compute 5 year housing appreciation
+    total_appreciation = hpi.loc['12-31-2015']/hpi.loc['12-31-2010']
     
-    print appreciation
+    appreciation = 100.0*(pow(total_appreciation,(1.0/5.0)) - 1)
+    
+    # Sort highest to lowest
+    appreciation.sort_values(inplace=True,ascending=False)
+    
+    # Print out list
+    for city in appreciation.index:
+    
+        print city + ': {:.3}'.format(appreciation[city]) + '%'
     
 def get_authvals_csv(authf):
     
